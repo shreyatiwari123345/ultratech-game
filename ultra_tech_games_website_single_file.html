@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>One UltraTech Day — Games</title>
+  <style>
+    :root{
+      --bg:#0f172a; /* slate-900 */
+      --card:#111827ee; /* gray-900 */
+      --accent:#f59e0b; /* amber-500 */
+      --accent-2:#22c55e; /* green-500 */
+      --accent-3:#3b82f6; /* blue-500 */
+      --text:#e5e7eb; /* gray-200 */
+      --muted:#94a3b8; /* slate-400 */
+      --danger:#ef4444; /* red-500 */
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:radial-gradient(1200px 600px at 10% -10%, #1f2937 0, #0b1022 40%, #050816 70%), var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif;}
+    .wrap{max-width:1000px;margin:0 auto;padding:24px}
+    header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}
+    .brand{display:flex;align-items:center;gap:12px}
+    .brand .logo{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#f97316);display:grid;place-items:center;font-weight:800;color:#111}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01));backdrop-filter: blur(8px);border:1px solid rgba(255,255,255,0.1);border-radius:20px;box-shadow: 0 10px 30px rgba(0,0,0,0.4);padding:20px}
+    .row{display:grid;grid-template-columns:1fr;gap:16px}
+    @media(min-width:880px){.row{grid-template-columns:1.2fr .8fr}}
+    h1{font-size:clamp(22px,4vw,34px);margin:0}
+    h2{font-size:clamp(18px,3vw,22px);margin:12px 0}
+    h3{margin:8px 0}
+    .muted{color:var(--muted)}
+    .btn{appearance:none;border:none;background:var(--accent);color:#111;padding:12px 16px;border-radius:14px;font-weight:700;cursor:pointer;transition:all .2s ease;box-shadow:0 6px 18px rgba(245,158,11,.25)}
+    .btn:hover{transform:translateY(-1px)}
+    .btn.alt{background:transparent;color:var(--text);border:1px solid rgba(255,255,255,.15)}
+    .btn.ghost{background:#0000;color:var(--text)}
+    .tag{display:inline-block;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);font-size:12px;margin-right:6px}
+    input[type="text"], input[type="number"], select{width:100%;background:#0b1022;border:1px solid rgba(255,255,255,.12);color:var(--text);padding:12px 14px;border-radius:12px}
+    .stack{display:flex;flex-direction:column;gap:10px}
+    .game{display:none}
+    .game.active{display:block}
+    .qbox{padding:16px;border:1px dashed rgba(255,255,255,.16);border-radius:14px}
+    .answers{display:grid;grid-template-columns:1fr;gap:10px;margin-top:10px}
+    @media(min-width:640px){.answers{grid-template-columns:repeat(2,1fr)}}
+    .answer{padding:12px;border:1px solid rgba(255,255,255,.16);border-radius:12px;cursor:pointer;background:rgba(255,255,255,.03)}
+    .answer.correct{border-color:rgba(34,197,94,.6);background:rgba(34,197,94,.1)}
+    .answer.wrong{border-color:rgba(239,68,68,.6);background:rgba(239,68,68,.08)}
+    .status{font-weight:700;margin-top:8px}
+    .pill{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.35);font-size:12px}
+    .footer{display:flex;gap:10px;flex-wrap:wrap}
+    .timer{font-variant-numeric:tabular-nums}
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .hidden{display:none}
+    .bar{height:10px;border-radius:999px;background:rgba(255,255,255,.1);overflow:hidden}
+    .bar > span{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#f97316);width:0%}
+    .success{color:var(--accent-2)}
+    .danger{color:var(--danger)}
+    .link{color:#93c5fd}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="logo">UT</div>
+        <div>
+          <h1>One UltraTech Day — Interactive Games</h1>
+          <div class="muted">Play on any phone • Instant answers • Auto-scoring • Export results</div>
+        </div>
+      </div>
+      <button id="exportBtn" class="btn alt" title="Download CSV of this session">Export CSV</button>
+    </header>
+
+    <div class="row">
+      <section class="card">
+        <h2>Welcome</h2>
+        <div class="stack">
+          <label>Team / Player Name</label>
+          <input id="playerName" type="text" placeholder="e.g. Team Alpha" />
+          <div class="grid-2">
+            <div class="stack">
+              <label>Enable Timer (per question)</label>
+              <select id="timerSelect">
+                <option value="0">No timer</option>
+                <option value="20">20 sec</option>
+                <option value="30" selected>30 sec</option>
+                <option value="45">45 sec</option>
+                <option value="60">60 sec</option>
+              </select>
+            </div>
+            <div class="stack">
+              <label>Questions per Game</label>
+              <select id="countSelect">
+                <option value="5" selected>5</option>
+                <option value="8">8</option>
+                <option value="10">10</option>
+              </select>
+            </div>
+          </div>
+          <div class="footer">
+            <button id="startBtn" class="btn">Start Games</button>
+            <button id="resetBtn" class="btn ghost" disabled>Reset</button>
+          </div>
+        </div>
+        <hr style="border:0;border-top:1px solid rgba(255,255,255,.12);margin:18px 0">
+        <div class="stack">
+          <span class="tag">Word Scramble</span>
+          <span class="tag">Emoji Quiz</span>
+          <span class="tag">UltraTech Quiz</span>
+          <span class="tag">Auto Score</span>
+          <span class="tag">CSV Export</span>
+        </div>
+      </section>
+
+      <aside class="card">
+        <h3>Session</h3>
+        <div class="stack">
+          <div><span class="muted">Player:</span> <strong id="sPlayer">—</strong></div>
+          <div><span class="muted">Game:</span> <strong id="sGame">—</strong></div>
+          <div class="bar"><span id="progress"></span></div>
+          <div><span class="muted">Q:</span> <span id="sIndex">0</span>/<span id="sTotal">0</span></div>
+          <div><span class="muted">Score:</span> <strong id="sScore">0</strong></div>
+          <div class="pill"><span>⏱️</span> <span class="timer" id="sTimer">—</span></div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Games Container -->
+    <section class="card" id="gameContainer">
+      <h2 id="gameTitle">Games</h2>
+
+      <!-- Question Box -->
+      <div class="qbox">
+        <div id="question"></div>
+        <div id="inputArea" class="stack" style="margin-top:10px"></div>
+        <div id="feedback" class="status"></div>
+      </div>
+
+      <div class="footer" style="margin-top:14px">
+        <button id="nextBtn" class="btn" disabled>Next</button>
+        <button id="skipBtn" class="btn alt">Skip</button>
+      </div>
+    </section>
+
+    <section class="card hidden" id="summary">
+      <h2>Results</h2>
+      <div id="summaryBody"></div>
+      <div class="footer" style="margin-top:12px">
+        <button class="btn" id="playAgain">Play Again</button>
+        <button class="btn alt" id="downloadCSV">Download CSV</button>
+      </div>
+    </section>
+
+    <footer style="opacity:.75;margin:18px 0" class="muted">© One UltraTech Day — lightweight offline web app (single file). Host on Netlify/Vercel/GitHub Pages.</footer>
+  </div>
+
+  <script>
+    // --- Data ----------------------------------------------------------
+    const WORD_SCRAMBLE_BANK = [
+      {w:"CONCRETE", s:"RCNEEOTC"},
+      {w:"CEMENT", s:"CEMTNE"},
+      {w:"FOUNDATION", s:"FONADUOTIN"},
+      {w:"STRENGTH", s:"STGNRETH"},
+      {w:"INNOVATION", s:"NVAOTNNIOI"},
+      {w:"IRON", s:"RODIN"},
+      {w:"CONSTRUCTION", s:"SRTUODNCIOTN"},
+      {w:"MATERIAL", s:"RILATME"},
+      {w:"STEEL", s:"ALSTE"},
+      {w:"STONE", s:"OTSNES"},
+      {w:"PLUMBING", s:"PGILNUAM"},
+      {w:"CONTRACTOR", s:"RCNTUAOTR"},
+      {w:"DESIGN", s:"GENISDE"},
+      {w:"PROJECT", s:"TCEOPRJO"},
+      {w:"BRIDGE", s:"DRIBEG"},
+      {w:"PLANT", s:"TLAPN"},
+      {w:"TEAM", s:"MAET"},
+      {w:"SMILE", s:"LNSMI"},
+      {w:"PARTY", s:"TYAPPR"},
+      {w:"LOVE", s:"LOVSE"}
+    ];
+
+    const EMOJI_QUIZ_BANK = [
+      {q:"🏗️👷‍♂️🧱", options:["Construction","Picnic","Vacation","Music"], a:0},
+      {q:"🏠❤️", options:["Home Sweet Home","Hospital","Office","Temple"], a:0},
+      {q:"🪨🏢", options:["Stone & Building","Park","Election","Airport"], a:0},
+      {q:"🧱➕🧪", options:["Concrete Mix","Chemistry Class","Match","Cooking"], a:0},
+      {q:"🛠️📐", options:["Tools & Design","Cinema","Festival","Sports"], a:0}
+    ];
+
+    const ULTRATECH_QUIZ_BANK = [
+      {q:"Which material binds building components together?", options:["Concrete","Cement","Glass","Wood"], a:1},
+      {q:"Which is used to reinforce concrete?", options:["Rubber","Plastic","Steel","Paper"], a:2},
+      {q:"Foundation primarily provides…", options:["Decoration","Strength & Support","Cooling","Painting"], a:1},
+      {q:"A person who manages building work contracts is a…", options:["Contractor","Driver","Chef","Painter"], a:0},
+      {q:"UltraTech's domain relates to…", options:["Cement & Concrete","Shoes","Electronics","Tourism"], a:0}
+    ];
+
+    const GAMES = [
+      { key:'scramble', title:'Word Scramble', bank: WORD_SCRAMBLE_BANK, type:'input' },
+      { key:'emoji', title:'Emoji Quiz', bank: EMOJI_QUIZ_BANK, type:'mcq' },
+      { key:'quiz', title:'UltraTech Quiz', bank: ULTRATECH_QUIZ_BANK, type:'mcq' },
+    ];
+
+    // --- State ---------------------------------------------------------
+    const state = {
+      player:"",
+      timerPerQ:30,
+      countPerGame:5,
+      gameIndex:0,
+      qIndex:0,
+      score:0,
+      total:0,
+      results:[], // {game, question, correct, answer, time}
+      tick:null,
+      timeLeft:0
+    };
+
+    // --- Helpers -------------------------------------------------------
+    const $ = sel => document.querySelector(sel);
+    const shuffle = arr => arr.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
+    const pickN = (bank, n) => shuffle(bank).slice(0, Math.min(n, bank.length));
+
+    function updateSessionUI(){
+      $('#sPlayer').textContent = state.player || '—';
+      $('#sGame').textContent = GAMES[state.gameIndex]?.title || '—';
+      $('#sIndex').textContent = state.qIndex;
+      $('#sTotal').textContent = state.total;
+      $('#sScore').textContent = state.score;
+      const pct = state.total? Math.round(( (state.gameIndex * state.countPerGame + state.qIndex) / state.total) * 100 ):0;
+      $('#progress').style.width = pct+'%';
+      $('#sTimer').textContent = state.timeLeft ? state.timeLeft + 's' : (state.timerPerQ? state.timerPerQ+'s' : '—');
+    }
+
+    function startTimer(onExpire){
+      clearInterval(state.tick);
+      if(!state.timerPerQ){ $('#sTimer').textContent = '—'; return; }
+      state.timeLeft = state.timerPerQ;
+      updateSessionUI();
+      state.tick = setInterval(()=>{
+        state.timeLeft--; updateSessionUI();
+        if(state.timeLeft<=0){ clearInterval(state.tick); onExpire?.(); }
+      },1000);
+    }
+
+    function recordResult(r){ state.results.push({ ts:new Date().toISOString(), player:state.player, ...r }); }
+
+    // --- Flow ----------------------------------------------------------
+    let currentDeck = [];
+
+    function init(){
+      $('#startBtn').addEventListener('click', startAll);
+      $('#resetBtn').addEventListener('click', ()=>location.reload());
+      $('#nextBtn').addEventListener('click', ()=>nextQuestion());
+      $('#skipBtn').addEventListener('click', ()=>{ showFeedback(false, 'Skipped'); nextQuestion(); });
+      $('#exportBtn').addEventListener('click', downloadCSV);
+      $('#downloadCSV').addEventListener('click', downloadCSV);
+      $('#playAgain').addEventListener('click', ()=>location.reload());
+      updateSessionUI();
+    }
+
+    function startAll(){
+      const name = $('#playerName').value.trim();
+      state.player = name || 'Player';
+      state.timerPerQ = parseInt($('#timerSelect').value,10);
+      state.countPerGame = parseInt($('#countSelect').value,10);
+      state.total = Math.min(state.countPerGame, WORD_SCRAMBLE_BANK.length) +
+                    Math.min(state.countPerGame, EMOJI_QUIZ_BANK.length) +
+                    Math.min(state.countPerGame, ULTRATECH_QUIZ_BANK.length);
+      $('#sTotal').textContent = state.total;
+      $('#resetBtn').disabled = false;
+      $('#gameContainer').scrollIntoView({behavior:'smooth'});
+      state.gameIndex = 0; state.qIndex = 0; state.score = 0; state.results = [];
+      startGame();
+    }
+
+    function startGame(){
+      const game = GAMES[state.gameIndex];
+      if(!game){ return finish(); }
+      $('#gameTitle').textContent = game.title;
+      $('#sGame').textContent = game.title;
+      $('#feedback').textContent = '';
+      $('#nextBtn').disabled = true;
+      // build deck for this game
+      currentDeck = pickN(game.bank, state.countPerGame);
+      state.qIndex = 0;
+      ask();
+    }
+
+    function ask(){
+      const game = GAMES[state.gameIndex];
+      const data = currentDeck[state.qIndex];
+      $('#feedback').textContent = '';
+      $('#nextBtn').disabled = true;
+      $('#question').innerHTML = '';
+      $('#inputArea').innerHTML = '';
+
+      if(game.key==='scramble'){
+        $('#question').innerHTML = `<h3>Unscramble this word</h3><div class="status" style="font-size:26px;letter-spacing:2px">${data.s}</div>`;
+        const inp = document.createElement('input');
+        inp.type='text'; inp.placeholder='Type your answer…';
+        inp.addEventListener('keyup', (e)=>{ if(e.key==='Enter') checkInput(inp.value, data.w); });
+        $('#inputArea').appendChild(inp);
+        const checkBtn = document.createElement('button');
+        checkBtn.className='btn'; checkBtn.textContent='Check';
+        checkBtn.addEventListener('click', ()=>checkInput(inp.value, data.w));
+        $('#inputArea').appendChild(checkBtn);
+      } else if(game.type==='mcq'){
+        $('#question').innerHTML = game.key==='emoji'
+          ? `<h3>Guess the phrase from emojis</h3><div style="font-size:30px">${data.q}</div>`
+          : `<h3>${data.q}</h3>`;
+        const wrap = document.createElement('div');
+        wrap.className='answers';
+        data.options.forEach((opt, idx)=>{
+          const btn = document.createElement('button');
+          btn.className='answer'; btn.textContent = opt;
+          btn.addEventListener('click', ()=>checkMCQ(btn, idx===data.a, opt, data.options[data.a]));
+          wrap.appendChild(btn);
+        });
+        $('#inputArea').appendChild(wrap);
+      }
+
+      startTimer(()=>{
+        showFeedback(false, 'Time up!');
+        recordResult({ game:game.title, question:game.key==='scramble'?data.s:(data.q||'Emoji'), correct:false, answer:'(timeout)', time: state.timerPerQ });
+        $('#nextBtn').disabled = false;
+      });
+
+      state.qIndex++;
+      updateSessionUI();
+    }
+
+    function checkInput(val, correct){
+      const game = GAMES[state.gameIndex];
+      const data = currentDeck[state.qIndex-1];
+      const isCorrect = (val||'').trim().toUpperCase() === correct.toUpperCase();
+      const spent = game && state.timerPerQ ? (state.timerPerQ - state.timeLeft) : 0;
+      clearInterval(state.tick);
+      if(isCorrect){ state.score++; showFeedback(true, 'Correct ✓'); }
+      else { showFeedback(false, `Correct answer: ${correct}`); }
+      recordResult({ game:game.title, question:data.s, correct:isCorrect, answer:val, time: spent });
+      $('#nextBtn').disabled = false;
+      updateSessionUI();
+    }
+
+    function checkMCQ(btn, ok, chosen, correct){
+      const game = GAMES[state.gameIndex];
+      const data = currentDeck[state.qIndex-1];
+      clearInterval(state.tick);
+      document.querySelectorAll('.answer').forEach(el=>el.disabled=true);
+      if(ok){ btn.classList.add('correct'); state.score++; showFeedback(true, 'Correct ✓'); }
+      else { btn.classList.add('wrong'); showFeedback(false, `Answer: ${correct}`); }
+      recordResult({ game:game.title, question: game.key==='emoji' ? (data.q||'Emoji') : data.q, correct:ok, answer:chosen, time: state.timerPerQ? (state.timerPerQ - state.timeLeft) : 0 });
+      $('#nextBtn').disabled = false; updateSessionUI();
+    }
+
+    function showFeedback(ok, msg){
+      const el = $('#feedback');
+      el.textContent = msg;
+      el.className = 'status ' + (ok? 'success':'danger');
+    }
+
+    function nextQuestion(){
+      const game = GAMES[state.gameIndex];
+      if(state.qIndex >= currentDeck.length){
+        // next game
+        state.gameIndex++;
+        if(state.gameIndex >= GAMES.length){ return finish(); }
+        return startGame();
+      }
+      ask();
+    }
+
+    function finish(){
+      clearInterval(state.tick);
+      $('#gameContainer').classList.add('hidden');
+      const total = state.total;
+      const score = state.score;
+      const pct = Math.round((score/total)*100);
+      const lines = [
+        `<div class="status" style="font-size:22px">🎉 ${state.player}, you scored <strong>${score}/${total}</strong> (${pct}%).</div>`,
+        '<div class="muted">Breakdown</div>'
+      ];
+      // breakdown table
+      const byGame = {};
+      state.results.forEach(r=>{ byGame[r.game] = byGame[r.game] || {correct:0,total:0}; byGame[r.game].total++; if(r.correct) byGame[r.game].correct++; });
+      lines.push('<div class="qbox">');
+      for(const k of Object.keys(byGame)){
+        lines.push(`<div style="margin:6px 0">${k}: <strong>${byGame[k].correct}/${byGame[k].total}</strong></div>`);
+      }
+      lines.push('</div>');
+      $('#summaryBody').innerHTML = lines.join('');
+      $('#summary').classList.remove('hidden');
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
+
+    function toCSV(rows){
+      const head = ['timestamp','player','game','question','answer','correct','time_sec'];
+      const esc = v => '"'+String(v??'').replaceAll('"','""')+'"';
+      const all = [head.join(',')].concat(rows.map(r=> head.map(k=>esc(r[k])).join(',')));
+      return all.join('\n');
+    }
+
+    function downloadCSV(){
+      if(!state.results.length){ alert('No results yet. Play a game first.'); return; }
+      const blob = new Blob([toCSV(state.results)], {type:'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const file = `ultratech_games_${(new Date()).toISOString().slice(0,19).replace(/[:T]/g,'-')}.csv`;
+      a.href = url; a.download = file; a.click(); URL.revokeObjectURL(url);
+    }
+
+    init();
+  </script>
+</body>
+</html>
